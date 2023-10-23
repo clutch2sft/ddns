@@ -18,6 +18,10 @@ import (
 var (
 	port     *int
 	wwwport  *int
+	callbackURL string
+    useHTTPS   *int
+    certFile *string // Add a flag for the certificate file path
+    keyFile  *string // Add a flag for the key file path
 	dnsMap   map[string]string
 	dnsMutex sync.Mutex
 )
@@ -132,22 +136,38 @@ func deleteRecord(domain string, rtype uint16) (err error) {
 	return nil
 }
 
-func updateRecord(domain string, ipaddr string) (err error) {
+func updateRecord(domain, ipaddr, callbackAPIKey string, performCallbackFlag int) error {
+    // Create a new A record with the new IP address
+    rr := new(dns.A)
+    rr.A = net.ParseIP(ipaddr)
+    rr.Hdr.Name = domain
+    rr.Hdr.Class = dns.ClassINET
+    rr.Hdr.Rrtype = dns.TypeA
+    rr.Hdr.Ttl = 30
 
-	rr := new(dns.A)
+    // Store the updated record
+    err := storeRecord(rr)
+    if err != nil {
+        return err
+    }
 
-	rr.A = net.ParseIP(ipaddr)
-	rr.Hdr.Name = domain
-	rr.Hdr.Class = dns.ClassINET
-	rr.Hdr.Rrtype = 1 // A
-	rr.Hdr.Ttl = 30
+    // Only perform the callback if performCallbackFlag is 1 and there is no error in updating the record
+    if performCallbackFlag == 1 {
+        currentIP, getCurrentErr := getCurrentIP(domain)
+        if getCurrentErr != nil {
+            return getCurrentErr
+        }
 
-	err = storeRecord(rr)
+        // Perform the callback with the API key, old IP, and new IP
+        callbackErr := performCallback(callbackAPIKey, currentIP, ipaddr, callbackURL)
+        if callbackErr != nil {
+            return callbackErr
+        }
+    }
 
-	fmt.Println("Update Record", "-", domain, ipaddr)
-
-	return err
+    return nil
 }
+
 
 func storeRecord(rr dns.RR) (err error) {
 	dnsMutex.Lock()
@@ -248,23 +268,82 @@ func serve(port int) {
 	}
 }
 
+func performCallback(apiKey, oldIP, newIP, callbackURL string) error {
+    // Define the JSON payload for the callback
+    payload := map[string]string{
+        "ApiKey": apiKey,
+        "OldIP":  oldIP,
+        "NewIP":  newIP,
+    }
+
+    // Convert the payload to JSON
+    jsonData, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+
+    // Perform the HTTP POST request to the provided callback URL
+    resp, err := http.Post(callbackURL, "application/json", bytes.NewBuffer(jsonData))
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Check the response status code (e.g., 200 for success)
+    if resp.StatusCode != http.StatusOK {
+        return errors.New("Callback failed with status code: " + resp.Status)
+    }
+
+    return nil
+}
+
+func getCurrentIP(domain string) (string, error) {
+    rr, err := getRecord(domain, dns.TypeA)
+    if err != nil {
+        return "", err
+    }
+
+    if a, ok := rr.(*dns.A); ok {
+        return a.A.String(), nil
+    }
+
+    return "", errors.New("DNS record is not of type A")
+}
+
+
 func main() {
 	dnsMap = make(map[string]string)
 	loadRecord()
-        // Read API keys from environment variables
-        updateAPIKey := os.Getenv("UPDATEAPIKEY")
-        deleteAPIKey := os.Getenv("DELETEAPIKEY")
+    // Read API keys from environment variables
+	var apiKeys = map[string]string{
+		os.Getenv("UPDATEAPIKEY"): "update", // Replace with your actual API keys and permissions
+		os.Getenv("DELETEAPIKEY"): "delete",
+	}
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
-	wwwport = flag.Int("cport", 8080, "control port (httpd)")
+	wwwport = flag.Int("cport", 4343, "control port (httpd)")
+	performCallbackFlag := flag.Int("performcallback", 0, "Perform callback if set to 1")
+    callbackURLFlag := flag.String("callbackurl", "https://example.com/callback", "Callback URL")
+    certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
+    keyFile = flag.String("key", "key.pem", "Path to the private key file")
+    useHTTPS = flag.Int("useHTTPS", 0, "use HTTPS (1) or HTTP (0)")
 
 	flag.Parse()
+    callbackURL = *callbackURLFlag
 
 	// Attach request handler func
 	dns.HandleFunc(".", handleDnsRequest)
 
-	go wwwServ(*wwwport)
+    go wwwServ(*wwwport, *certFile, *keyFile)
 
-	// Start server
-	serve(*port)
+    // Start server based on useHTTPS flag
+    if *useHTTPS == 1 {
+        if *certFile == "" || *keyFile == "" {
+            fmt.Println("Please provide both certificate and key files when using HTTPS.")
+            os.Exit(1)
+        }
+        go wwwSServ(*wwwport, *certFile, *keyFile)
+    } else {
+        go wwwServ(*wwwport)
+    }
 }

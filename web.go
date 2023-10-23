@@ -42,49 +42,71 @@ func notFoundResponse(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateRecordRequest(w http.ResponseWriter, r *http.Request) {
-	raddr := splitRemoteAddr(r.RemoteAddr)
+    // Get the API key from the request header
+    apiKey := r.Header.Get("API-Key")
 
-	od := updateRecordData{}
+    // Check if the API key is valid
+    if permission, ok := apiKeys[apiKey]; ok {
+        // Valid API key found
+        raddr := splitRemoteAddr(r.RemoteAddr)
+        od := updateRecordData{}
+        err := json.NewDecoder(r.Body).Decode(&od)
+        if err != nil {
+            forbiddenResponse(w, r)
+            return
+        }
 
-	err := json.NewDecoder(r.Body).Decode(&od)
-
-	if err != nil {
-		forbiddenResponse(w, r)
-		return
-	}
-
-	if od.IP == "" {
-		if err := updateRecord(od.Domain, raddr); err != nil {
-			w.Write([]byte(err.Error()))
-			return
-		}
-	} else {
-		if err := updateRecord(od.Domain, od.IP); err != nil {
-			w.Write([]byte(err.Error()))
-			return
-		}
-	}
-	w.Write([]byte("UPDATE RECORD SUCCESS"))
+        // Check if the API key has "write" permission to update records
+        if permission == "update" {
+            if od.IP == "" {
+                if err := updateRecord(od.Domain, raddr); err != nil {
+                    w.Write([]byte(err.Error()))
+                    return
+                }
+            } else {
+                if err := updateRecord(od.Domain, od.IP); err != nil {
+                    w.Write([]byte(err.Error()))
+                    return
+                }
+            }
+            w.Write([]byte("UPDATE RECORD SUCCESS"))
+        } else {
+            // API key does not have "write" permission
+            forbiddenResponse(w, r)
+        }
+    } else {
+        // Invalid or missing API key
+        forbiddenResponse(w, r)
+    }
 }
 
 func deleteRecordRequest(w http.ResponseWriter, r *http.Request) {
-	od := updateRecordData{}
+    // Get the API key from the request header
+    apiKey := r.Header.Get("API-Key")
 
-	err := json.NewDecoder(r.Body).Decode(&od)
+    // Check if the API key is valid and has "delete" permission
+    if permission, ok := apiKeys[apiKey]; ok && permission == "delete" {
+        od := updateRecordData{}
+        err := json.NewDecoder(r.Body).Decode(&od)
 
-	if err != nil {
-		forbiddenResponse(w, r)
-		return
-	}
+        if err != nil {
+            forbiddenResponse(w, r)
+            return
+        }
 
-	derr := deleteRecord(od.Domain, 1)
+        derr := deleteRecord(od.Domain, 1)
 
-	if derr != nil {
-		w.Write([]byte(err.Error()))
-		return
-	}
-	w.Write([]byte("DELETE RECORD SUCCESS"))
+        if derr != nil {
+            w.Write([]byte(derr.Error()))
+            return
+        }
+        w.Write([]byte("DELETE RECORD SUCCESS"))
+    } else {
+        // Invalid or unauthorized API key
+        forbiddenResponse(w, r)
+    }
 }
+
 
 /**
 *	webPageProc
@@ -124,4 +146,15 @@ func wwwServ(servPort int) {
 		fmt.Println(err.Error())
 		os.Exit(0)
 	}
+}
+
+func wwwSServ(servPort int, certFile, keyFile string) {
+    http.HandleFunc("/", webPageProc)
+
+    // Start the HTTPS server
+    err := http.ListenAndServeTLS(":"+strconv.Itoa(servPort), certFile, keyFile, nil)
+    if err != nil {
+        fmt.Println(err.Error())
+        os.Exit(1)
+    }
 }

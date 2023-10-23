@@ -334,8 +334,6 @@ func main() {
 	// Attach request handler func
 	dns.HandleFunc(".", handleDnsRequest)
 
-    go wwwServ(*wwwport, *certFile, *keyFile)
-
     // Start server based on useHTTPS flag
     if *useHTTPS == 1 {
         if *certFile == "" || *keyFile == "" {

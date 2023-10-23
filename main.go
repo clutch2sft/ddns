@@ -251,7 +251,9 @@ func serve(port int) {
 func main() {
 	dnsMap = make(map[string]string)
 	loadRecord()
-
+        // Read API keys from environment variables
+        updateAPIKey := os.Getenv("UPDATEAPIKEY")
+        deleteAPIKey := os.Getenv("DELETEAPIKEY")
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
 	wwwport = flag.Int("cport", 8080, "control port (httpd)")

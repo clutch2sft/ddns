@@ -32,6 +32,15 @@ var (
 	dnsMutex sync.Mutex
 )
 
+// Define apiKeys as a package-level variable
+var apiKeys = map[string]string{
+    os.Getenv("UPDATEAPIKEY"): "update",
+    os.Getenv("DELETEAPIKEY"): "delete",
+}
+
+var callbackAPIKey := os.Getenv("CALLBACKAPIKEY")
+
+
 func saveRecord() error {
 	f, ferr := os.OpenFile(".\\ddns.dat", os.O_CREATE|os.O_WRONLY, 0644)
 
@@ -320,11 +329,7 @@ func getCurrentIP(domain string) (string, error) {
 func main() {
 	dnsMap = make(map[string]string)
 	loadRecord()
-    // Read API keys from environment variables
-	var apiKeys = map[string]string{
-		os.Getenv("UPDATEAPIKEY"): "update", // Replace with your actual API keys and permissions
-		os.Getenv("DELETEAPIKEY"): "delete",
-	}
+
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
 	wwwport = flag.Int("cport", 4343, "control port (httpd)")
@@ -333,7 +338,6 @@ func main() {
     certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
     keyFile = flag.String("key", "key.pem", "Path to the private key file")
     useHTTPS = flag.Int("useHTTPS", 0, "use HTTPS (1) or HTTP (0)")
-	callbackAPIKey := os.Getenv("CALLBACKAPIKEY")
 
 
 	flag.Parse()

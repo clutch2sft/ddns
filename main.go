@@ -298,6 +298,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 func serve(bindAddr string, port int) {
 	go func() {
 		server := &dns.Server{Addr: bindAddr + ":" + strconv.Itoa(port), Net: "udp"}
+		fmt.Println("Starting ipv4 listener")
 		err := server.ListenAndServe()
 		defer server.Shutdown()
 		if err != nil {
@@ -307,6 +308,7 @@ func serve(bindAddr string, port int) {
 
 	go func() {
 		server := &dns.Server{Addr: "[::]:" + strconv.Itoa(port), Net: "udp"}
+		fmt.Println("Starting ipv6 listener")
 		err := server.ListenAndServe()
 		defer server.Shutdown()
 		if err != nil {

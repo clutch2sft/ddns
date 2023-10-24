@@ -23,9 +23,9 @@ var (
     certFile *string // Add a flag for the certificate file path
     keyFile  *string // Add a flag for the key file path
 	dnsMap   map[string]string
-    performCallbackFlag *int       // Declare performCallbackFlag as a package-level variable
-    callbackURLFlag  *string    // Declare callbackURLFlag as a package-level variable
-	callbackAPIKey  *string
+    performCallbackFlag int       // Declare performCallbackFlag as a package-level variable
+    callbackURLFlag  string    // Declare callbackURLFlag as a package-level variable
+	callbackAPIKey  string
 	dnsMutex sync.Mutex
 )
 
@@ -335,7 +335,7 @@ func main() {
 
 	flag.Parse()
     callbackURL = *callbackURLFlag
-	
+
 
 	// Attach request handler func
 	dns.HandleFunc(".", handleDnsRequest)

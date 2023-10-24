@@ -38,7 +38,7 @@ var apiKeys = map[string]string{
     os.Getenv("DELETEAPIKEY"): "delete",
 }
 
-var callbackAPIKey := os.Getenv("CALLBACKAPIKEY")
+var callbackAPIKey = os.Getenv("CALLBACKAPIKEY")
 
 
 func saveRecord() error {

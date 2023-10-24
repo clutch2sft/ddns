@@ -404,5 +404,5 @@ func main() {
 		go wwwServ(*wwwport)
 	}
 	// Start server
-	serve(*port)
+	serve(bindAddr, *port)
 }

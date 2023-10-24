@@ -329,7 +329,7 @@ func main() {
     certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
     keyFile = flag.String("key", "key.pem", "Path to the private key file")
     useHTTPS = flag.Int("useHTTPS", 0, "use HTTPS (1) or HTTP (0)")
-	callbackAPIKey = os.Getenv("CALLBACKAPIKEY")
+	callbackAPIKey := os.Getenv("CALLBACKAPIKEY")
 
 
 	flag.Parse()

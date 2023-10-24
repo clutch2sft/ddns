@@ -40,6 +40,34 @@ var apiKeys = map[string]string{
 
 var callbackAPIKey = os.Getenv("CALLBACKAPIKEY")
 
+func getFirstIPv6Address() string {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		fmt.Println("Error while getting network interfaces:", err)
+		return ""
+	}
+
+	for _, iface := range interfaces {
+		addrs, err := iface.Addrs()
+		if err != nil {
+			fmt.Println("Error while getting addresses for interface", iface.Name, ":", err)
+			continue
+		}
+
+		for _, addr := range addrs {
+			if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() == nil && ipnet.IP.IsGlobalUnicast() {
+					// Found a global IPv6 address on the interface
+					return ipnet.IP.String()
+				}
+			}
+		}
+	}
+
+	// No global IPv6 address found
+	return ""
+}
+
 func getFirstEthernetIPv4() (string, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
@@ -295,10 +323,10 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(m)
 }
 
-func serve(bindAddr string, port int) {
+func serve(bindAddr string, ipv6Addr string, port int) {
 	// Create a separate instance of dns.Server for each listener
 	ipv4Server := &dns.Server{Addr: bindAddr + ":" + strconv.Itoa(port), Net: "udp"}
-	ipv6Server := &dns.Server{Addr: "[::]:" + strconv.Itoa(port), Net: "udp"}
+	ipv6Server := &dns.Server{Addr: ipv6Addr + strconv.Itoa(port), Net: "udp"}
 
 	// Start the IPv4 listener in a goroutine
 	go func() {
@@ -373,9 +401,18 @@ func main() {
 		fmt.Println("Error:", err)
 		return
 	}
+	// Get the IPv6 address of the first available network interface
+	ipv6Addr := getFirstIPv6Address()
+
+	// Check if we found an IPv6 address
+	if ipv6Addr == "" {
+		fmt.Println("No global IPv6 address found on any network interface.")
+		return
+	}
 
 	// Print the bound address
 	fmt.Println("Binding to:", bindAddr)
+	fmt.Println("Binding to:", ipv6Addr)
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
 	wwwport = flag.Int("cport", 4343, "control port (httpd)")

@@ -40,6 +40,31 @@ var apiKeys = map[string]string{
 
 var callbackAPIKey = os.Getenv("CALLBACKAPIKEY")
 
+func getFirstEthernetIPv4() (string, error) {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return "", err
+	}
+
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp != 0 && iface.Flags&net.FlagLoopback == 0 && iface.Flags&net.FlagPointToPoint == 0 {
+			addrs, err := iface.Addrs()
+			if err != nil {
+				return "", err
+			}
+
+			for _, addr := range addrs {
+				ipnet, ok := addr.(*net.IPNet)
+				if ok && ipnet.IP.To4() != nil {
+					return ipnet.IP.String(), nil
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("No IPv4 address found on any Ethernet interface")
+}
+
 func saveRecord() error {
 	f, ferr := os.OpenFile(".\\ddns.dat", os.O_CREATE|os.O_WRONLY, 0644)
 
@@ -270,9 +295,9 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 	w.WriteMsg(m)
 }
 
-func serve(port int) {
+func serve(bindAddr string, port int) {
 	go func() {
-		server := &dns.Server{Addr: "0.0.0.0:" + strconv.Itoa(port), Net: "udp"}
+		server := &dns.Server{Addr: bindAddr + ":" + strconv.Itoa(port), Net: "udp"}
 		err := server.ListenAndServe()
 		defer server.Shutdown()
 		if err != nil {
@@ -338,7 +363,15 @@ func main() {
 	fmt.Println("Starting program...") // Debug output
 	dnsMap = make(map[string]string)
 	loadRecord()
+	// Get the first available Ethernet IPv4 address
+	bindAddr, err := getFirstEthernetIPv4()
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
 
+	// Print the bound address
+	fmt.Println("Binding to:", bindAddr)
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
 	wwwport = flag.Int("cport", 4343, "control port (httpd)")

@@ -25,7 +25,6 @@ var (
 	dnsMap   map[string]string
     performCallbackFlag int       // Declare performCallbackFlag as a package-level variable
     callbackURLFlag  string    // Declare callbackURLFlag as a package-level variable
-	callbackAPIKey  string
 	dnsMutex sync.Mutex
 )
 
@@ -335,6 +334,7 @@ func main() {
 
 	flag.Parse()
     callbackURL = *callbackURLFlag
+	cbapiKey = *callbackAPIKey
 
 
 	// Attach request handler func

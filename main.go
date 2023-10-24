@@ -13,6 +13,9 @@ import (
 	"sync"
 
 	"github.com/miekg/dns"
+    "encoding/json" // Import the json package
+    "net/http"     // Import the http package
+    "bytes"        // Import the bytes package
 )
 
 var (

@@ -59,12 +59,12 @@ func updateRecordRequest(w http.ResponseWriter, r *http.Request) {
         // Check if the API key has "write" permission to update records
         if permission == "update" {
             if od.IP == "" {
-                if err := updateRecord(od.Domain, raddr); err != nil {
+                if err := updateRecord(od.Domain, raddr, callbackAPIKey, performCallbackFlag); err != nil {
                     w.Write([]byte(err.Error()))
                     return
                 }
             } else {
-                if err := updateRecord(od.Domain, od.IP); err != nil {
+                if err := updateRecord(od.Domain, od.IP, callbackAPIKey, performCallbackFlag); err != nil {
                     w.Write([]byte(err.Error()))
                     return
                 }

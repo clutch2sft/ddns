@@ -2,43 +2,43 @@ package main
 
 import (
 	"bufio"
+	"bytes"         // Import the bytes package
+	"encoding/json" // Import the json package
 	"errors"
 	"flag"
 	"fmt"
 	"math"
 	"net"
+	"net/http" // Import the http package
 	"os"
 	"strconv"
 	"strings"
 	"sync"
+
 	"github.com/miekg/dns"
-    "encoding/json" // Import the json package
-    "net/http"     // Import the http package
-    "bytes"        // Import the bytes package
 )
 
 var (
-	port     *int
-	wwwport  *int
-	callbackURL string
-	cbapiKey string
-    useHTTPS   *int
-    certFile *string // Add a flag for the certificate file path
-    keyFile  *string // Add a flag for the key file path
-	dnsMap   map[string]string
-    performCallbackFlag int       // Declare performCallbackFlag as a package-level variable
-    callbackURLFlag  string    // Declare callbackURLFlag as a package-level variable
-	dnsMutex sync.Mutex
+	port                *int
+	wwwport             *int
+	callbackURL         string
+	cbapiKey            string
+	useHTTPS            *int
+	certFile            *string // Add a flag for the certificate file path
+	keyFile             *string // Add a flag for the key file path
+	dnsMap              map[string]string
+	performCallbackFlag int    // Declare performCallbackFlag as a package-level variable
+	callbackURLFlag     string // Declare callbackURLFlag as a package-level variable
+	dnsMutex            sync.Mutex
 )
 
 // Define apiKeys as a package-level variable
 var apiKeys = map[string]string{
-    os.Getenv("UPDATEAPIKEY"): "update",
-    os.Getenv("DELETEAPIKEY"): "delete",
+	os.Getenv("UPDATEAPIKEY"): "update",
+	os.Getenv("DELETEAPIKEY"): "delete",
 }
 
 var callbackAPIKey = os.Getenv("CALLBACKAPIKEY")
-
 
 func saveRecord() error {
 	f, ferr := os.OpenFile(".\\ddns.dat", os.O_CREATE|os.O_WRONLY, 0644)
@@ -151,37 +151,36 @@ func deleteRecord(domain string, rtype uint16) (err error) {
 }
 
 func updateRecord(domain, ipaddr, callbackAPIKey string, performCallbackFlag int) error {
-    // Create a new A record with the new IP address
-    rr := new(dns.A)
-    rr.A = net.ParseIP(ipaddr)
-    rr.Hdr.Name = domain
-    rr.Hdr.Class = dns.ClassINET
-    rr.Hdr.Rrtype = dns.TypeA
-    rr.Hdr.Ttl = 30
+	// Create a new A record with the new IP address
+	rr := new(dns.A)
+	rr.A = net.ParseIP(ipaddr)
+	rr.Hdr.Name = domain
+	rr.Hdr.Class = dns.ClassINET
+	rr.Hdr.Rrtype = dns.TypeA
+	rr.Hdr.Ttl = 30
 
-    // Store the updated record
-    err := storeRecord(rr)
-    if err != nil {
-        return err
-    }
+	// Store the updated record
+	err := storeRecord(rr)
+	if err != nil {
+		return err
+	}
 
-    // Only perform the callback if performCallbackFlag is 1 and there is no error in updating the record
-    if performCallbackFlag == 1 {
-        currentIP, getCurrentErr := getCurrentIP(domain)
-        if getCurrentErr != nil {
-            return getCurrentErr
-        }
+	// Only perform the callback if performCallbackFlag is 1 and there is no error in updating the record
+	if performCallbackFlag == 1 {
+		currentIP, getCurrentErr := getCurrentIP(domain)
+		if getCurrentErr != nil {
+			return getCurrentErr
+		}
 
-        // Perform the callback with the API key, old IP, and new IP
-        callbackErr := performCallback(callbackAPIKey, currentIP, ipaddr, callbackURL)
-        if callbackErr != nil {
-            return callbackErr
-        }
-    }
+		// Perform the callback with the API key, old IP, and new IP
+		callbackErr := performCallback(callbackAPIKey, currentIP, ipaddr, callbackURL)
+		if callbackErr != nil {
+			return callbackErr
+		}
+	}
 
-    return nil
+	return nil
 }
-
 
 func storeRecord(rr dns.RR) (err error) {
 	dnsMutex.Lock()
@@ -283,49 +282,49 @@ func serve(port int) {
 }
 
 func performCallback(apiKey, oldIP, newIP, callbackURL string) error {
-    // Define the JSON payload for the callback
-    payload := map[string]string{
-        "ApiKey": apiKey,
-        "OldIP":  oldIP,
-        "NewIP":  newIP,
-    }
+	// Define the JSON payload for the callback
+	payload := map[string]string{
+		"ApiKey": apiKey,
+		"OldIP":  oldIP,
+		"NewIP":  newIP,
+	}
 
-    // Convert the payload to JSON
-    jsonData, err := json.Marshal(payload)
-    if err != nil {
-        return err
-    }
+	// Convert the payload to JSON
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
 
-    // Perform the HTTP POST request to the provided callback URL
-    resp, err := http.Post(callbackURL, "application/json", bytes.NewBuffer(jsonData))
-    if err != nil {
-        return err
-    }
-    defer resp.Body.Close()
+	// Perform the HTTP POST request to the provided callback URL
+	resp, err := http.Post(callbackURL, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 
-    // Check the response status code (e.g., 200 for success)
-    if resp.StatusCode != http.StatusOK {
-        return errors.New("Callback failed with status code: " + resp.Status)
-    }
+	// Check the response status code (e.g., 200 for success)
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("Callback failed with status code: " + resp.Status)
+	}
 
-    return nil
+	return nil
 }
 
 func getCurrentIP(domain string) (string, error) {
-    rr, err := getRecord(domain, dns.TypeA)
-    if err != nil {
-        return "", err
-    }
+	rr, err := getRecord(domain, dns.TypeA)
+	if err != nil {
+		return "", err
+	}
 
-    if a, ok := rr.(*dns.A); ok {
-        return a.A.String(), nil
-    }
+	if a, ok := rr.(*dns.A); ok {
+		return a.A.String(), nil
+	}
 
-    return "", errors.New("DNS record is not of type A")
+	return "", errors.New("DNS record is not of type A")
 }
 
-
 func main() {
+	fmt.Println("Starting program...") // Debug output
 	dnsMap = make(map[string]string)
 	loadRecord()
 
@@ -334,26 +333,30 @@ func main() {
 	wwwport = flag.Int("cport", 4343, "control port (httpd)")
 	performCallbackFlag = *flag.Int("performcallback", 0, "Perform callback if set to 1")
 	callbackURLFlag := flag.String("callbackurl", "https://example.com/callback", "Callback URL")
-    certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
-    keyFile = flag.String("key", "key.pem", "Path to the private key file")
-    useHTTPS = flag.Int("useHTTPS", 0, "use HTTPS (1) or HTTP (0)")
-
+	certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
+	keyFile = flag.String("key", "key.pem", "Path to the private key file")
+	useHTTPS = flag.Int("useHTTPS", 0, "use HTTPS (1) or HTTP (0)")
 
 	flag.Parse()
-    callbackURL = *callbackURLFlag
+	fmt.Println("Parsed flags, starting services...") // Debug output
 
+	callbackURL = *callbackURLFlag
 
 	// Attach request handler func
+	fmt.Println("DNS handler starting...") // Debug output
+
 	dns.HandleFunc(".", handleDnsRequest)
 
-    // Start server based on useHTTPS flag
-    if *useHTTPS == 1 {
-        if *certFile == "" || *keyFile == "" {
-            fmt.Println("Please provide both certificate and key files when using HTTPS.")
-            os.Exit(1)
-        }
-        go wwwSServ(*wwwport, *certFile, *keyFile)
-    } else {
-        go wwwServ(*wwwport)
-    }
+	// Start server based on useHTTPS flag
+	if *useHTTPS == 1 {
+		if *certFile == "" || *keyFile == "" {
+			fmt.Println("Please provide both certificate and key files when using HTTPS.")
+			os.Exit(1)
+		}
+		fmt.Println("wwwSServ handler starting...") // Debug output
+		go wwwSServ(*wwwport, *certFile, *keyFile)
+	} else {
+		fmt.Println("wwwServ handler starting...") // Debug output
+		go wwwServ(*wwwport)
+	}
 }

@@ -328,7 +328,7 @@ func main() {
 	port = flag.Int("port", 53, "server port (dns server)")
 	wwwport = flag.Int("cport", 4343, "control port (httpd)")
 	performCallbackFlag = flag.Int("performcallback", 0, "Perform callback if set to 1")
-    callbackURLFlag = flag.String("callbackurl", "https://example.com/callback", "Callback URL")
+	callbackURLFlag := flag.String("callbackurl", "https://example.com/callback", "Callback URL")
     certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
     keyFile = flag.String("key", "key.pem", "Path to the private key file")
     useHTTPS = flag.Int("useHTTPS", 0, "use HTTPS (1) or HTTP (0)")

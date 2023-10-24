@@ -22,6 +22,7 @@ var (
 	port     *int
 	wwwport  *int
 	callbackURL string
+	cbapiKey string
     useHTTPS   *int
     certFile *string // Add a flag for the certificate file path
     keyFile  *string // Add a flag for the key file path

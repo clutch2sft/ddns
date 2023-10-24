@@ -326,7 +326,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 func serve(bindAddr string, ipv6Addr string, port int) {
 	// Create a separate instance of dns.Server for each listener
 	ipv4Server := &dns.Server{Addr: bindAddr + ":" + strconv.Itoa(port), Net: "udp"}
-	ipv6Server := &dns.Server{Addr: ipv6Addr + strconv.Itoa(port), Net: "udp"}
+	ipv6Server := &dns.Server{Addr: ipv6Addr + ":" + strconv.Itoa(port), Net: "udp"}
 
 	// Start the IPv4 listener in a goroutine
 	go func() {

@@ -271,14 +271,25 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
 }
 
 func serve(port int) {
-	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
+	go func() {
+		server := &dns.Server{Addr: "0.0.0.0:" + strconv.Itoa(port), Net: "udp"}
+		err := server.ListenAndServe()
+		defer server.Shutdown()
+		if err != nil {
+			fmt.Println("Failed to setup the IPv4 udp server:", err.Error())
+		}
+	}()
 
-	err := server.ListenAndServe()
-	defer server.Shutdown()
+	go func() {
+		server := &dns.Server{Addr: "[::]:" + strconv.Itoa(port), Net: "udp"}
+		err := server.ListenAndServe()
+		defer server.Shutdown()
+		if err != nil {
+			fmt.Println("Failed to setup the IPv6 udp server:", err.Error())
+		}
+	}()
 
-	if err != nil {
-		fmt.Println("Failed to setup the udp server:", err.Error())
-	}
+	select {}
 }
 
 func performCallback(apiKey, oldIP, newIP, callbackURL string) error {

@@ -306,15 +306,15 @@ func serve(bindAddr string, port int) {
 		}
 	}()
 
-	go func() {
-		server := &dns.Server{Addr: "[::]:" + strconv.Itoa(port), Net: "udp"}
-		fmt.Println("Starting ipv6 listener")
-		err := server.ListenAndServe()
-		defer server.Shutdown()
-		if err != nil {
-			fmt.Println("Failed to setup the IPv6 udp server:", err.Error())
-		}
-	}()
+	// go func() {
+	// 	server := &dns.Server{Addr: "[::]:" + strconv.Itoa(port), Net: "udp"}
+	// 	fmt.Println("Starting ipv6 listener")
+	// 	err := server.ListenAndServe()
+	// 	defer server.Shutdown()
+	// 	if err != nil {
+	// 		fmt.Println("Failed to setup the IPv6 udp server:", err.Error())
+	// 	}
+	// }()
 
 	select {}
 }

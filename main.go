@@ -359,4 +359,6 @@ func main() {
 		fmt.Println("wwwServ handler starting...") // Debug output
 		go wwwServ(*wwwport)
 	}
+	// Start server
+	serve(*port)
 }

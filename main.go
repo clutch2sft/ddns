@@ -445,5 +445,5 @@ func main() {
 		go wwwServ(*wwwport)
 	}
 	// Start server
-	serve(bindAddr, *port)
+	serve(bindAddr, ipv6Addr, *port)
 }

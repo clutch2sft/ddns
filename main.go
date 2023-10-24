@@ -328,7 +328,7 @@ func main() {
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
 	wwwport = flag.Int("cport", 4343, "control port (httpd)")
-	performCallbackFlag = flag.Int("performcallback", 0, "Perform callback if set to 1")
+	performCallbackFlag = *flag.Int("performcallback", 0, "Perform callback if set to 1")
 	callbackURLFlag := flag.String("callbackurl", "https://example.com/callback", "Callback URL")
     certFile = flag.String("cert", "cert.pem", "Path to the certificate file")
     keyFile = flag.String("key", "key.pem", "Path to the private key file")
@@ -338,7 +338,6 @@ func main() {
 
 	flag.Parse()
     callbackURL = *callbackURLFlag
-	cbapiKey = *callbackAPIKey
 
 
 	// Attach request handler func

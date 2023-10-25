@@ -415,7 +415,7 @@ func main() {
 	fmt.Println("Binding to:", ipv6Addr)
 	// Parse flags
 	port = flag.Int("port", 53, "server port (dns server)")
-	wwwport = flag.Int("cport", 4343, "control port (httpd)")
+	wwwport = flag.Int("cport", 8080, "control port (httpd)")
 	performCallbackFlag = *flag.Int("performcallback", 0, "Perform callback if set to 1")
 	callbackURLFlag := flag.String("callbackurl", "https://example.com/callback", "Callback URL")
 	certFile = flag.String("cert", "cert.pem", "Path to the certificate file")

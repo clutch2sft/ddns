@@ -135,11 +135,11 @@ func webPageProc(w http.ResponseWriter, r *http.Request) {
 *	wwwServ
 **/
 func wwwServ(servPort int) {
-	fmt.Println("In wwwSServ handler ...") // Debug output
+	fmt.Println("In wwwServ handler ...") // Debug output
 	http.HandleFunc("/", webPageProc)
 	//
 	servAddr := fmt.Sprintf(":%d", servPort)
-	fmt.Println("wwwSServ port set ...") // Debug output
+	fmt.Println("wwwServ port set ...") // Debug output
 	err := http.ListenAndServe(servAddr, nil)
 
 	if err != nil {
@@ -147,9 +147,11 @@ func wwwServ(servPort int) {
 		fmt.Println(err.Error())
 		os.Exit(0)
 	}
+	fmt.Println("wwwServ running ...") // Debug output
 }
 
 func wwwSServ(servPort int, certFile, keyFile string) {
+	fmt.Println("In wwwSServ handler ...") // Debug output
 	http.HandleFunc("/", webPageProc)
 
 	// Start the HTTPS server
@@ -158,4 +160,5 @@ func wwwSServ(servPort int, certFile, keyFile string) {
 		fmt.Println(err.Error())
 		os.Exit(1)
 	}
+	fmt.Println("wwwSServ running ...") // Debug output
 }

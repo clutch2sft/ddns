@@ -138,7 +138,7 @@ func wwwServ(servPort int) {
 	fmt.Println("In wwwServ handler ...") // Debug output
 	http.HandleFunc("/", webPageProc)
 	//
-	servAddr := fmt.Sprintf(":%d", servPort)
+	servAddr := fmt.Sprintf("0.0.0.0:%d", servPort)
 	fmt.Println("wwwServ port set ...") // Debug output
 	err := http.ListenAndServe(servAddr, nil)
 

@@ -442,7 +442,7 @@ func main() {
 		go wwwSServ(*wwwport, *certFile, *keyFile)
 	} else {
 		fmt.Println("wwwServ handler starting...") // Debug output
-		go wwwServ(*wwwport)
+		go wwwServ(*wwwport, bindAddr)
 	}
 	// Start server
 	serve(bindAddr, ipv6Addr, *port)
